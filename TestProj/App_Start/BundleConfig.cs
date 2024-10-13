@@ -25,6 +25,17 @@ namespace TestProj
             bundles.Add(new StyleBundle("~/Content/css").Include(
                       "~/Content/bootstrap.css",
                       "~/Content/site.css"));
+
+            bundles.Add(new ScriptBundle("~/bundles/Employee").Include(
+                "~/Scripts/Employee/Employee.js"));
+            bundles.Add(new ScriptBundle("~/bundles/EmployeeDataTable").Include(
+                "~/Scripts/Employee/EmployeeDataTable.js"));
+            bundles.Add(new ScriptBundle("~/bundles/dataTables").Include(
+                "~/Scripts/dataTables/jquery.dataTables.js",
+                "~/Scripts/dataTables/dataTables.responsive.js"));
+            bundles.Add(new StyleBundle("~/bundles/datatables-css")
+                .Include("~/Content/dataTables/jquery.dataTables.css", new CssRewriteUrlTransform())
+                .Include("~/Content/dataTables/dataTables.responsive.css", new CssRewriteUrlTransform()));
         }
     }
 }

@@ -23,12 +23,10 @@ namespace TestProj
         {
             AreaRegistration.RegisterAllAreas();
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
+            //UnityMvcActivator.Start();
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
-            //UnityConfig.RegisterTypes(UnityConfig.Container); // Register Unity configurations
-            //DependencyResolver.SetResolver(new UnityDependencyResolver(UnityConfig.Container)); // Set Unity as the resolver
 
-            UnityMvcActivator.Start();
         }
        
     }

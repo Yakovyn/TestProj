@@ -1,4 +1,7 @@
-﻿using DAL;
+﻿using BL;
+using Core;
+using Core.Presentation;
+using DAL;
 using DAL.Models;
 using System;
 using System.Collections.Generic;
@@ -13,72 +16,87 @@ namespace TestProj.Controllers
     [BasicAuthentication]
     public class EmployeeController : Controller
     {
-        private readonly AppDbContext _context = new AppDbContext();
 
+        private readonly IEmployeeService _employeeService;
+
+        public EmployeeController(IEmployeeService employeeService)
+        {
+            _employeeService = employeeService;
+        }
         public ActionResult Index(string searchString)
         {
-            var employees = _context.Employees.Include("Department").Where(e => !e.IsDeleted);
+            var employees = _employeeService.GetEmployeeVMs(searchString);
+            return View(employees);
+        }
 
-            if (!String.IsNullOrEmpty(searchString))
-            {
-                employees = employees.Where(e => e.FirstName.Contains(searchString) || e.LastName.Contains(searchString));
-            }
-
-            return View(employees.ToList());
+        public JsonResult GetEmployeeNames(string term)
+        {
+            var result = _employeeService.GetEmployeeNames(term);
+            return Json(result, JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult Add()
         {
-            ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name");
-            ViewBag.ProgrammingLanguages = new SelectList(_context.ProgrammingLanguages, "Id", "Name");
-            return View();
+            var vm = new AddEmployeeViewModel()
+            {
+                Departments = _employeeService.GetDepartments().ToList(),
+                Languages = _employeeService.GetProgrammingLanguages().ToList()
+            };
+            return View(vm);
         }
 
         [HttpPost]
-        public ActionResult Add(Employee employee)
+        public ActionResult Add(EmployeeViewModel employee)
         {
             if (ModelState.IsValid)
             {
-                _context.Employees.Add(employee);
-                _context.SaveChanges();
+                _employeeService.AddEmployee(employee, employee.LanguagesIds);
                 return RedirectToAction("Index");
             }
-            ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name", employee.DepartmentId);
-            ViewBag.ProgrammingLanguages = new SelectList(_context.ProgrammingLanguages, "Id", "Name");
+
+            var vm = new AddEmployeeViewModel()
+            {
+                Employee = employee,
+                Departments = _employeeService.GetDepartments().ToList(),
+                Languages = _employeeService.GetProgrammingLanguages().ToList()
+            };
             return View(employee);
         }
 
         public ActionResult Edit(int id)
         {
-            var employee = _context.Employees.Find(id);
+            var employee = _employeeService.GetEmployeeVmById(id);
             if (employee == null) return HttpNotFound();
 
-            ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name", employee.DepartmentId);
-            ViewBag.ProgrammingLanguages = new SelectList(_context.ProgrammingLanguages, "Id", "Name");
-            return View(employee);
+            var vm = new AddEmployeeViewModel()
+            {
+                Employee = employee,
+                Departments = _employeeService.GetDepartments().ToList(),
+                Languages = _employeeService.GetProgrammingLanguages().ToList()
+            };
+            return View(vm);
         }
 
         [HttpPost]
-        public ActionResult Edit(Employee employee)
+        public ActionResult Edit(EmployeeViewModel employee)
         {
             if (ModelState.IsValid)
             {
-                _context.Entry(employee).State = EntityState.Modified;
-                _context.SaveChanges();
+                _employeeService.UpdateEmployee(employee, employee.LanguagesIds ?? new List<int>());
                 return RedirectToAction("Index");
             }
-            ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name", employee.DepartmentId);
-            ViewBag.ProgrammingLanguages = new SelectList(_context.ProgrammingLanguages, "Id", "Name");
+            var vm = new AddEmployeeViewModel()
+            {
+                Employee = employee,
+                Departments = _employeeService.GetDepartments().ToList(),
+                Languages = _employeeService.GetProgrammingLanguages().ToList()
+            };
             return View(employee);
         }
 
         public ActionResult Delete(int id)
         {
-            var employee = _context.Employees.Find(id);
-            if (employee == null) return HttpNotFound();
-
-            employee.IsDeleted = true;
-            _context.SaveChanges();
+            _employeeService.DeleteEmployee(id);
             return RedirectToAction("Index");
         }
     }

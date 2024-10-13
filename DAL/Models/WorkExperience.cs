@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DAL.Models
 {
-    public class WorkExperience
+    public class WorkExperience : IWorkExperience
     {
         public int Id { get; set; }
         public int EmployeeId { get; set; }

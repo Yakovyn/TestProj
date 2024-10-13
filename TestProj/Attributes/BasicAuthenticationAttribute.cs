@@ -9,6 +9,13 @@ using System.Web;
 using System.Web.Mvc;
 using DAL.Models;
 using BL;
+using System.Net;
+using System.Security.Principal;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Web.Security;
+using Microsoft.Ajax.Utilities;
+using Microsoft.Owin.Security;
 
 namespace TestProj.Attributes
 {
@@ -17,6 +24,10 @@ namespace TestProj.Attributes
     {
         protected override bool AuthorizeCore(HttpContextBase httpContext)
         {
+            if (httpContext.User.Identity.IsAuthenticated)
+            {
+                return true; // User is already authenticated
+            }
             var authHeader = httpContext.Request.Headers["Authorization"];
             if (authHeader != null && authHeader.StartsWith("Basic "))
             {
@@ -36,13 +47,11 @@ namespace TestProj.Attributes
 
                         if (user != null)
                         {
-                            // User is authenticated
-                            return true;
+                            return true; // Authentication successful
                         }
                     }
                 }
             }
-
             return false; // Authentication failed
         }
 

@@ -6,6 +6,13 @@ using Unity;
 using Unity.Lifetime;
 using BL;
 using Core;
+using Microsoft.AspNet.Identity.EntityFramework;
+using Microsoft.AspNet.Identity;
+using System.Web.Mvc;
+using Unity.AspNet.Mvc;
+using System.Data.Entity;
+using TestProj.Controllers;
+using TestProj.Filters;
 
 namespace TestProj
 {
@@ -19,6 +26,7 @@ namespace TestProj
           new Lazy<IUnityContainer>(() =>
           {
               var container = new UnityContainer();
+
               RegisterTypes(container);
               return container;
           });
@@ -41,13 +49,14 @@ namespace TestProj
         /// </remarks>
         public static void RegisterTypes(IUnityContainer container)
         {
-            //container.RegisterType<IRepository<Employee>, EmployeeRepository>();
-            //container.RegisterType<IRepository<Department>, DepartmentRepository>();
-            //container.RegisterType<IRepository<User>, UserRepository>();
+            container.RegisterType<DbContext, AppDbContext>(new HierarchicalLifetimeManager());
             container.RegisterType<ApplicationUserManager>(new HierarchicalLifetimeManager());
-            container.RegisterType<IUserService, UserService>();
+            container.RegisterType<IUserStore<User>, UserStore<User>>(new HierarchicalLifetimeManager());
+            container.RegisterType<UserManager<User>>(new HierarchicalLifetimeManager());
+            container.RegisterType<AccountController>();
             container.RegisterType<IEmployeeService, EmployeeService>();
-            container.RegisterType<AppDbContext>(new HierarchicalLifetimeManager());
+            container.RegisterType<UserActionFilter>();
+            DependencyResolver.SetResolver(new UnityDependencyResolver(container));
         }
     }
 }

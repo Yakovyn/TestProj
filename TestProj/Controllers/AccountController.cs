@@ -12,28 +12,27 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Web.Security;
 using Newtonsoft.Json;
+using System.Security.Principal;
+using System.Threading;
+using Microsoft.AspNet.Identity;
+using System.Security.Claims;
+using Microsoft.Owin.Security;
 
 namespace TestProj.Controllers
 {
     [BasicAuthentication]
     public class AccountController : Controller
     {
-        private readonly AppDbContext _context = new AppDbContext();
-
-        public ActionResult Add()
-        {
-            return View();
-        }
         private readonly ApplicationUserManager _userManager;
 
-        public AccountController(ApplicationUserManager userManager)
+        public AccountController(ApplicationUserManager userManager, AppDbContext context)
         {
             _userManager = userManager;
         }
         // Login action
         [HttpPost]
         [AllowAnonymous]
-        public async Task<ActionResult> Login(string username, string password)
+        public async Task<ActionResult> Login(string username, string password, string returnUrl)
         {
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
@@ -43,41 +42,47 @@ namespace TestProj.Controllers
             var user = await _userManager.FindAsync(username, password);
             if (user != null)
             {
-                // Authentication successful
+
                 var identity = await user.GenerateUserIdentityAsync(_userManager);
-                var authCookie = new HttpCookie(FormsAuthentication.FormsCookieName, 
-                    FormsAuthentication.Encrypt(new FormsAuthenticationTicket(1, username, DateTime.Now, DateTime.Now.AddMinutes(30), false, JsonConvert.SerializeObject(identity.Claims.Select(c => new { c.Type, c.Value }).ToList()))))
+                var authProperties = new AuthenticationProperties
                 {
-                    HttpOnly = true,
-                    Expires = DateTime.Now.AddMinutes(30)
+                    IsPersistent = true,
+                    ExpiresUtc = DateTime.UtcNow.AddMinutes(30),
+                    AllowRefresh = true
                 };
-                Response.Cookies.Add(authCookie);
-                return new HttpStatusCodeResult(HttpStatusCode.OK);
+                HttpContext.GetOwinContext().Authentication.SignIn(authProperties, identity);
+
+                Thread.CurrentPrincipal = new GenericPrincipal(identity, null);
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return Redirect(returnUrl);
+                }
+                return RedirectToAction("Index", "Employee");
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.Unauthorized);
         }
-
-        // Logout action
-        [HttpPost]
-        [Authorize]
-        public ActionResult Logout()
+        [HttpGet]
+        [AllowAnonymous]
+        public ActionResult Login()
         {
-            // Clear the authentication cookie
-            FormsAuthentication.SignOut();
-            return new HttpStatusCodeResult(HttpStatusCode.OK);
+            return View();
+        }
+        public ActionResult Add()
+        {
+            return View();
         }
         [HttpPost]
-        public ActionResult Add(User user)
+        public ActionResult Add(string username, string email, string password)
         {
-            if (ModelState.IsValid)
+            var user = new User
             {
-                user.LastAction = DateTime.Now;
-                _context.Users.Add(user);
-                _context.SaveChanges();
-                return RedirectToAction("Index");
-            }
-            return View(user);
+                UserName = username,
+                Email = email,
+                LastAction = DateTime.Now
+            };
+            var result = _userManager.Create(user, password);
+            return RedirectToAction("Index", "Employee");
         }
     }
 }
