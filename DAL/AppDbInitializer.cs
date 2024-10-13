@@ -29,7 +29,7 @@ namespace DAL
             {
                 new ProgrammingLanguage { Name = "C#" },
                 new ProgrammingLanguage { Name = "JavaScript" },
-                new ProgrammingLanguage { Name = "JAva" }
+                new ProgrammingLanguage { Name = "Java" }
             });
             }
 
